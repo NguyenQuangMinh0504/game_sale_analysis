@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import plotly.express as px
-from dash import (Dash, dcc)
+from dash import (Dash, dcc, html)
 import dash_bootstrap_components as dbc
 
 data = pd.read_csv("data/vgsales.csv")
@@ -70,7 +70,6 @@ fig_3.update_yaxes(autorange="reversed")
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.SLATE])
 
-import plotly.graph_objects as go
 console_dict = {"manufacture":[], "number_of_game":[]}
 def add_to_dict(name, platform, query):
     console_dict["manufacture"].append(name)
@@ -127,8 +126,101 @@ console_df = pd.DataFrame(console_dict)
 pie_fig_4 = px.pie(console_df, values='number_of_game', names='manufacture', color=[1, 2, 3, 4, 5, 6, 7], title="Home Video Game Console from 2010", template="plotly_dark")
 
 
+publisher_tree_map = px.treemap(data[data['Publisher'].notna()], path=['Publisher', "Name"], values='Global_Sales', template="plotly_dark")
+
+
+
+
+
+import plotly.graph_objects as go
+
+# Create figure
+testing_fig = go.Figure()
+
+# Constants
+img_width = 1600
+img_height = 900
+scale_factor = 0.5
+
+# Add invisible scatter trace.
+# This trace is added to help the autoresize logic work.
+testing_fig.add_trace(
+    go.Scatter(
+        x=[0, img_width * scale_factor],
+        y=[0, img_height * scale_factor],
+        mode="markers",
+        marker_opacity=0
+    )
+)
+
+# Configure axes
+testing_fig.update_xaxes(
+    visible=False,
+    range=[0, img_width * scale_factor]
+)
+
+testing_fig.update_yaxes(
+    visible=False,
+    range=[0, img_height * scale_factor],
+    # the scaleanchor attribute ensures that the aspect ratio stays constant
+    scaleanchor="x"
+)
+
+# Add image
+testing_fig.add_layout_image(
+    dict(
+        x=0,
+        sizex=img_width * scale_factor,
+        y=img_height * scale_factor,
+        sizey=img_height * scale_factor,
+        xref="x",
+        yref="y",
+        opacity=1.0,
+        layer="below",
+        sizing="stretch",
+        source="https://raw.githubusercontent.com/michaelbabyn/plot_data/master/bridge.jpg")
+)
+
+# Configure other layout
+testing_fig.update_layout(
+    width=img_width * scale_factor,
+    height=img_height * scale_factor,
+    margin={"l": 0, "r": 0, "t": 0, "b": 0},
+)
+
+# Disable the autosize on double click because it adds unwanted margins around the image
+# More detail: https://plotly.com/python/configuration-options/
+
+
+
+
+
+
+
 if __name__ == '__main__':
     app.layout = dbc.Container([
+
+        dbc.Row([
+            dbc.Col(html.H1("Video game sales analysis"),
+                    width=12)
+        ]),
+        dbc.Row([
+            dbc.Col(html.H2("Platform analysis"))
+        ]),
+        dbc.Row(
+            dbc.Col(html.H4("Number of platforms: {}".format(len(data["Platform"].unique()))))
+        ),
+
+        dbc.Row([
+
+            dbc.Col([
+                # Sales by region figure
+                dcc.Graph(id='testing_fig', figure=testing_fig)
+            ], width={'size': 10, 'offset': 1})
+
+        ]),
+
+
         dbc.Row([
 
             dbc.Col([
@@ -169,7 +261,15 @@ if __name__ == '__main__':
                 # Sales by region figure
                 dcc.Graph(id='pie_fig_4', figure=pie_fig_4)
             ], width={'size': 5, 'offset': 1}),
+            dbc.Row([
+                dbc.Col([
+                    # Sales by region figure
+                    dcc.Graph(id='publisher_tree_map', figure=publisher_tree_map)
+                ], width={'size': 10, 'offset': 1})
+
+            ]),
 
         ]),
+
     ], fluid=True)
     app.run_server(debug=True, port=3001)
